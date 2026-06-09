@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Nano64 NTSC TV Output Simulator</title>
+<style>
+  body { background:#111; color:#eee; font-family:monospace; }
+  canvas { image-rendering: pixelated; border:1px solid #555; }
+  .row { display:flex; gap:16px; margin-top:16px; align-items:flex-start; }
+  .controls { margin-top:16px; }
+  label { margin-right:12px; }
+</style>
+</head>
+<body>
+
+<h1>Nano64 NTSC TV Output Simulator</h1>
+
+<div class="controls">
+  <label>
+    Palette bank:
+    <select id="bankSelect">
+      <option value="0">Bank 0</option>
+      <option value="1">Bank 1</option>
+      <option value="2">Bank 2</option>
+      <option value="3">Bank 3</option>
+    </select>
+  </label>
+
+  <label>
+    <input type="checkbox" id="ramToggle" checked>
+    Ramanujan phase animation
+  </label>
+
+  <label>
+    Phase speed:
+    <input type="range" id="speedSlider" min="1" max="50" value="10">
+  </label>
+</div>
+
+<div class="row">
+  <div>
+    <h3>256×192 NTSC Composite Output</h3>
+    <canvas id="screen" width="256" height="192"></canvas>
+  </div>
+  <div>
+    <h3>Palette (0–255) with NTSC blending</h3>
+    <canvas id="palette" width="256" height="256"></canvas>
+  </div>
+</div>
+
+<script>
+/* -------------------------------------------------------------
+   1. REAL C64 EXPANDED 64‑ENTRY PALETTE (Pepto NTSC)
+------------------------------------------------------------- */
+const C64_R = [
+  0x00,0x40,0x6C,0x90, 0x00,0x40,0x6C,0x90,
+  0x62,0x8A,0xB2,0xDA, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x89,0xA8,0xC7,0xE6,
+  0x9A,0xB4,0xCE,0xE8, 0x9A,0xB4,0xCE,0xE8,
+
+  0x00,0x40,0x6C,0x90, 0x00,0x40,0x6C,0x90,
+  0x62,0x8A,0xB2,0xDA, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x89,0xA8,0xC7,0xE6,
+  0x9A,0xB4,0xCE,0xE8, 0x9A,0xB4,0xCE,0xE8
+];
+
+const C64_G = [
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8,
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8,
+
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8,
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8
+];
+
+const C64_B = [
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8,
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8,
+
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8,
+  0x00,0x40,0x6C,0x90, 0x62,0x8A,0xB2,0xDA,
+  0x89,0xA8,0xC7,0xE6, 0x9A,0xB4,0xCE,0xE8
+];
+
+/* -------------------------------------------------------------
+   2. EXPAND TO 4 × 256 PALETTE BANKS (Nano64 format)
+------------------------------------------------------------- */
+const banks = [];
+for (let b = 0; b < 4; b++) {
+  const palR = new Array(256);
+  const palG = new Array(256);
+  const palB = new Array(256);
+  for (let i = 0; i < 256; i++) {
+    const idx = i & 63;
+    palR[i] = C64_R[idx];
+    palG[i] = C64_G[idx];
+    palB[i] = C64_B[idx];
+  }
+  banks.push({R: palR, G: palG, B: palB});
+}
+
+/* -------------------------------------------------------------
+   3. NTSC YIQ ENCODING + RAMANUJAN PHASE DRIFT
+------------------------------------------------------------- */
+function rgbToYIQ(r, g, b) {
+  const Y = r + 0.587*g + 0.114*b + 0.5;  // your engine’s formula
+  const I = 0.596*r - 0.275*g - 0.321*b;
+  const Q = 0.212*r - 0.523*g + 0.311*b;
+  return {Y, I, Q};
+}
+
+function yiqToRgb(Y, I, Q) {
+  let r = Y + 0.956*I + 0.621*Q;
+  let g = Y - 0.272*I - 0.647*Q;
+  let b = Y - 1.106*I + 1.703*Q;
+  return {
+    r: Math.max(0, Math.min(255, r)),
+    g: Math.max(0, Math.min(255, g)),
+    b: Math.max(0, Math.min(255, b))
+  };
+}
+
+function applyNTSC(r, g, b, phase) {
+  const {Y, I, Q} = rgbToYIQ(r, g, b);
+  const c = Math.cos(phase);
+  const s = Math.sin(phase);
+  return yiqToRgb(Y, I*c + Q*s, Q);
+}
+
+/* -------------------------------------------------------------
+   4. DRAW PALETTE + SCREEN
+------------------------------------------------------------- */
+const paletteCanvas = document.getElementById('palette');
+const paletteCtx = paletteCanvas.getContext('2d');
+const screenCanvas = document.getElementById('screen');
+const screenCtx = screenCanvas.getContext('2d');
+
+let ramPhase = 0;
+
+function drawPalette(bank, phase) {
+  const pal = banks[bank];
+  const img = paletteCtx.createImageData(256, 256);
+
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
+      const idx = y*16 + x;
+      const {r, g, b} = applyNTSC(pal.R[idx], pal.G[idx], pal.B[idx], phase);
+
+      for (let py = 0; py < 16; py++) {
+        for (let px = 0; px < 16; px++) {
+          const sx = x*16 + px;
+          const sy = y*16 + py;
+          const o = (sy*256 + sx)*4;
+          img.data[o+0] = r;
+          img.data[o+1] = g;
+          img.data[o+2] = b;
+          img.data[o+3] = 255;
+        }
+      }
+    }
+  }
+  paletteCtx.putImageData(img, 0, 0);
+}
+
+function drawScreen(bank, phase) {
+  const pal = banks[bank];
+  const img = screenCtx.createImageData(256, 192);
+
+  for (let y = 0; y < 192; y++) {
+    for (let x = 0; x < 256; x++) {
+      let idx;
+      if (y < 64) idx = (x >> 5) & 63;          // color bars
+      else if (y < 128) idx = 8 + (((x>>4)^(y>>4))&1); // checker
+      else idx = x;                             // full ramp
+
+      const {r, g, b} = applyNTSC(
+        pal.R[idx], pal.G[idx], pal.B[idx],
+        phase + y*0.01
+      );
+
+      const o = (y*256 + x)*4;
+      img.data[o+0] = r;
+      img.data[o+1] = g;
+      img.data[o+2] = b;
+      img.data[o+3] = 255;
+    }
+  }
+  screenCtx.putImageData(img, 0, 0);
+}
+
+/* -------------------------------------------------------------
+   5. ANIMATION LOOP
+------------------------------------------------------------- */
+const bankSelect = document.getElementById('bankSelect');
+const ramToggle = document.getElementById('ramToggle');
+const speedSlider = document.getElementById('speedSlider');
+
+function animate() {
+  const bank = parseInt(bankSelect.value);
+  const speed = parseInt(speedSlider.value)/200;
+
+  if (ramToggle.checked)
+    ramPhase += speed * Math.PI * Math.sqrt(163) * 0.001;
+
+  drawPalette(bank, ramPhase);
+  drawScreen(bank, ramPhase);
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+
+</body>
+</html>
