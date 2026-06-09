@@ -1,0 +1,18 @@
+void pulse_music_init(void) {
+    for (int i=0;i<16;i++)
+        pat[i] = (step_t){0,0,0};
+
+    // C major arpeggio
+    pat[0]  = (step_t){60,4,100};
+    pat[2]  = (step_t){64,4,100};
+    pat[4]  = (step_t){67,4,100};
+    pat[6]  = (step_t){72,4,100};
+
+    // Add a kick every 4 steps
+    pat[0].vel = 120;
+    pat[4].vel = 120;
+
+    row = 0;
+    tick = 0;
+    tps = 8;
+}
