@@ -1,0 +1,104 @@
+#include "pulse_video.h"
+#include "logical384.h"
+#include "dither.h"
+
+// Rough NTSC-like timing (not broadcast-accurate, but structurally OK)
+static const uint16_t HSYNC_TICKS   = 75;   // ~4.7us @16MHz
+static const uint16_t BACKPORCH_TKS = 75;   // ~4.7us
+static const uint16_t ACTIVE_TICKS  = 800;  // active region (approx)
+
+// Frame parameters
+static const uint16_t LINES_TOTAL   = 262;
+static const uint16_t LINES_VISIBLE = 192;
+static const uint16_t FIRST_VISIBLE = 40;   // vertical offset
+
+// Physical width (what we actually output)
+static const uint16_t PHYSICAL_WIDTH = 256;
+
+// Line pulse buffer
+static Pulse lineBuf[1024];
+static volatile uint16_t lineLen = 0;
+static volatile uint16_t linePos = 0;
+static volatile uint16_t pulseTicksLeft = 0;
+
+// Current scanline
+static volatile uint16_t currentLine = 0;
+
+ISR(TIMER1_COMPA_vect) {
+  if (pulseTicksLeft == 0) {
+    if (linePos >= lineLen) {
+      currentLine++;
+      if (currentLine >= LINES_TOTAL) {
+        currentLine = 0;
+      }
+
+      // HSYNC + back porch
+      lineBuf[0] = { HSYNC_TICKS, LEVEL_SYNC };
+      lineBuf[1] = { BACKPORCH_TKS, LEVEL_BLACK };
+      lineLen = 2;
+
+      if (currentLine >= FIRST_VISIBLE &&
+          currentLine < FIRST_VISIBLE + LINES_VISIBLE) {
+        uint16_t visibleLine = currentLine - FIRST_VISIBLE;
+        pulseVideoRenderScanline(visibleLine);
+      }
+
+      linePos = 0;
+    }
+
+    Pulse p = lineBuf[linePos++];
+    pulseTicksLeft = p.ticks;
+
+    if (p.level == LEVEL_SYNC) {
+      digitalWrite(VIDEO_PIN, LOW);
+    } else {
+      digitalWrite(VIDEO_PIN, HIGH);
+    }
+  }
+
+  pulseTicksLeft--;
+}
+
+void pulseVideoInit() {
+  pinMode(VIDEO_PIN, OUTPUT);
+  digitalWrite(VIDEO_PIN, LOW);
+
+  cli();
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCCR1B |= (1 << WGM12);   // CTC
+  TCCR1B |= (1 << CS10);    // prescaler 1
+  OCR1A = 1;
+  TIMSK1 |= (1 << OCIE1A);
+  sei();
+
+  currentLine = 0;
+  linePos = lineLen = 0;
+  pulseTicksLeft = 0;
+}
+
+// Render one visible scanline (0..191) into lineBuf
+void pulseVideoRenderScanline(uint16_t line) {
+  uint16_t idx = lineLen; // start after sync + back porch
+
+  // Map 192 visible lines → 240 logical lines
+  uint16_t logicalY = (uint32_t)line * LOGICAL_HEIGHT / LINES_VISIBLE;
+
+  for (uint16_t px = 0; px < PHYSICAL_WIDTH; ++px) {
+    // Map 256 physical pixels → 384 logical pixels
+    uint16_t logicalX = (uint32_t)px * LOGICAL_WIDTH / PHYSICAL_WIDTH;
+
+    LogicalPixel lp = logical384Sample(logicalX, logicalY);
+
+    // Dither uses 2x2 pattern in logical space
+    uint8_t dx = logicalX & 0x01;
+    uint8_t dy = logicalY & 0x01;
+    uint8_t d = dither2x2(lp.color, dx, dy);
+
+    bool finalOn = lp.on && (d != 0);
+
+    lineBuf[idx++] = { 1, finalOn ? LEVEL_WHITE : LEVEL_BLACK };
+  }
+
+  lineLen = idx;
+}
