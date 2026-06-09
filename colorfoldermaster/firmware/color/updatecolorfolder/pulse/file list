@@ -1,0 +1,4 @@
+/pulse/
+    ntsc_core.pulse
+    nano64_pulse_loader.c
+    nano64_pulse_loader.h
