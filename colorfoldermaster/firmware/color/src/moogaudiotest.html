@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Nano64 Basic Machine – Music + Graphics Sim</title>
+<style>
+  body { background:#111; color:#eee; font-family:monospace; }
+  canvas { image-rendering: pixelated; border:1px solid #555; }
+  #wrap { display:flex; gap:24px; margin-top:16px; align-items:flex-start; }
+  button { margin-right:8px; }
+</style>
+</head>
+<body>
+
+<h1>Nano64 Basic Machine – Music + Graphics Simulation</h1>
+
+<div>
+  <button id="playBtn">Play / Stop Music</button>
+  <span id="status">stopped</span>
+</div>
+
+<div id="wrap">
+  <div>
+    <h3>Screen (256×192, scaled)</h3>
+    <canvas id="screen" width="256" height="192"></canvas>
+  </div>
+  <div>
+    <h3>Pattern (Nano64‑style)</h3>
+    <pre id="patternView"></pre>
+  </div>
+</div>
+
+<script>
+/* -------------------------------------------------------------
+   1. BASIC "NANO64" SCREEN SIM
+------------------------------------------------------------- */
+const scr = document.getElementById('screen');
+const sctx = scr.getContext('2d');
+const W = 256, H = 192;
+
+// simple 64‑color C64‑ish palette (subset)
+const PAL = [];
+for (let i=0;i<64;i++) {
+  const h = (i*360/16)|0;
+  const l = 30 + ((i>>4)*15);
+  PAL.push(hslToRgb(h, 80, l));
+}
+
+function hslToRgb(h, s, l) {
+  s/=100; l/=100;
+  const k = n => (n + h/30) % 12;
+  const a = s * Math.min(l, 1-l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n),1)));
+  return [ (f(0)*255)|0, (f(8)*255)|0, (f(4)*255)|0 ];
+}
+
+/* simple VRAM: 32×24 tiles, each tile = 8×8 pixels */
+const TW = 32, TH = 24;
+const TILE_W = 8, TILE_H = 8;
+const vram = new Array(TH);
+for (let y=0;y<TH;y++) {
+  vram[y] = new Array(TW).fill(0);
+}
+
+/* fill with a checkerboard pattern */
+for (let y=0;y<TH;y++) {
+  for (let x=0;x<TW;x++) {
+    vram[y][x] = ((x^y)&1) ? 5 : 10;
+  }
+}
+
+let t = 0;
+
+function renderScreen() {
+  const img = sctx.createImageData(W,H);
+  for (let ty=0;ty<TH;ty++) {
+    for (let tx=0;tx<TW;tx++) {
+      const colIndex = (vram[ty][tx] + ((t>>3)&15)) & 63; // color cycling
+      const [r,g,b] = PAL[colIndex];
+      for (let py=0;py<TILE_H;py++) {
+        for (let px=0;px<TILE_W;px++) {
+          const x = tx*TILE_W + px;
+          const y = ty*TILE_H + py;
+          const o = (y*W + x)*4;
+          img.data[o+0]=r;
+          img.data[o+1]=g;
+          img.data[o+2]=b;
+          img.data[o+3]=255;
+        }
+      }
+    }
+  }
+  sctx.putImageData(img,0,0);
+}
+
+/* simple sprite: bouncing square */
+let sx = 40, sy = 40, svx = 1, svy = 1;
+function updateSprite() {
+  sx += svx;
+  sy += svy;
+  if (sx<0 || sx>W-16) svx = -svx;
+  if (sy<0 || sy>H-16) svy = -svy;
+
+  sctx.fillStyle = '#00000080';
+  sctx.fillRect(0,0,W,H); // slight dark overlay
+  sctx.fillStyle = '#ffffff';
+  sctx.fillRect(sx, sy, 16, 16);
+}
+
+/* -------------------------------------------------------------
+   2. SIMPLE "NANO64" PATTERN VIEW
+------------------------------------------------------------- */
+const pattern = [
+  {row:0,  note:'C4', len:4, vel:100},
+  {row:2,  note:'E4', len:4, vel:100},
+  {row:4,  note:'G4', len:4, vel:100},
+  {row:6,  note:'C5', len:4, vel:100},
+  {row:8,  note:'G4', len:4, vel:80},
+  {row:10, note:'E4', len:4, vel:80},
+  {row:12, note:'C4', len:4, vel:100},
+];
+
+const patternView = document.getElementById('patternView');
+function drawPattern(cursorRow) {
+  let lines = [];
+  for (let r=0;r<16;r++) {
+    const step = pattern.find(p => p.row===r);
+    const mark = (r===cursorRow) ? '>' : ' ';
+    if (step) {
+      lines.push(
+        `${mark}${r.toString(16).padStart(2,'0')}  ${step.note}  len=${step.len} vel=${step.vel}`
+      );
+    } else {
+      lines.push(`${mark}${r.toString(16).padStart(2,'0')}  ...`);
+    }
+  }
+  patternView.textContent = lines.join('\n');
+}
+
+/* -------------------------------------------------------------
+   3. WEB AUDIO "NANO64" MUSIC SIM
+------------------------------------------------------------- */
+let audioCtx = null;
+let isPlaying = false;
+let nextNoteTime = 0;
+let currentRow = 0;
+const tempo = 120; // BPM
+const stepsPerBeat = 2;
+const secondsPerStep = 60 / tempo / stepsPerBeat;
+
+function noteToFreq(noteName) {
+  const map = {C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+  const m = noteName.match(/^([A-G]#?)(\d)$/);
+  if (!m) return 440;
+  const semitone = map[m[1]];
+  const octave = parseInt(m[2],10);
+  const midi = 12*(octave+1) + semitone;
+  return 440 * Math.pow(2,(midi-69)/12);
+}
+
+function scheduleStep(time, row) {
+  const step = pattern.find(p => p.row===row);
+  if (!step) return;
+
+  const freq = noteToFreq(step.note);
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(freq, time);
+
+  const v = step.vel/127;
+  gain.gain.setValueAtTime(0, time);
+  gain.gain.linearRampToValueAtTime(v, time+0.01);
+  gain.gain.linearRampToValueAtTime(v*0.6, time+0.1);
+  gain.gain.linearRampToValueAtTime(0, time+step.len*secondsPerStep);
+
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(time);
+  osc.stop(time+step.len*secondsPerStep+0.1);
+}
+
+function scheduler() {
+  if (!isPlaying) return;
+  while (nextNoteTime < audioCtx.currentTime + 0.1) {
+    scheduleStep(nextNoteTime, currentRow);
+    drawPattern(currentRow);
+    currentRow = (currentRow+1) & 0x0f;
+    nextNoteTime += secondsPerStep;
+  }
+  requestAnimationFrame(scheduler);
+}
+
+/* -------------------------------------------------------------
+   4. MAIN LOOP: GRAPHICS + MUSIC
+------------------------------------------------------------- */
+function loop() {
+  t++;
+  renderScreen();
+  updateSprite();
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* -------------------------------------------------------------
+   5. UI: PLAY / STOP
+------------------------------------------------------------- */
+const playBtn = document.getElementById('playBtn');
+const status = document.getElementById('status');
+
+playBtn.onclick = () => {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (!isPlaying) {
+    isPlaying = true;
+    currentRow = 0;
+    nextNoteTime = audioCtx.currentTime + 0.05;
+    status.textContent = 'playing';
+    scheduler();
+  } else {
+    isPlaying = false;
+    status.textContent = 'stopped';
+  }
+};
+
+// initial pattern view
+drawPattern(-1);
+</script>
+
+</body>
+</html>
