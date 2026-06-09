@@ -1,0 +1,7 @@
+colorfoldermaster/
+  ntsc_core/
+    ntsc_core.c
+    ntsc_core.h
+    palettes.h
+    framebuffer.h
+    README.md
