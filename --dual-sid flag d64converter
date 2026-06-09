@@ -1,0 +1,20 @@
+import argparse
+
+def build_argparser():
+    p = argparse.ArgumentParser()
+    p.add_argument("input", help="input .BAS file")
+    p.add_argument("output", help="output file")
+    p.add_argument("--dual-sid", action="store_true",
+                   help="enable dual SID mode (2 chips / 6 voices)")
+    p.add_argument("--sid-base1", type=lambda x: int(x, 0), default=0xd400,
+                   help="base address of first SID (default 0xD400)")
+    p.add_argument("--sid-base2", type=lambda x: int(x, 0), default=0xd420,
+                   help="base address of second SID (default 0xD420)")
+    return p
+
+def main():
+    args = build_argparser().parse_args()
+    convert_bas(args)
+
+if __name__ == "__main__":
+    main()
