@@ -1,0 +1,196 @@
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <avr/pgmspace.h>
+#include <stdint.h>
+
+// -------------------- NTSC constants --------------------
+
+#define LINES_PER_FRAME 262
+
+// Composite levels (0–255)
+#define LEVEL_SYNC     0
+#define LEVEL_BLANK   77
+#define LEVEL_WHITE  255
+
+// YIQ coefficients (scaled by 256)
+#define YR  77   // 0.299 * 256
+#define YG 150   // 0.587 * 256
+#define YB  29   // 0.114 * 256
+
+#define IR 152   // 0.596 * 256
+#define IG -70   // -0.275 * 256
+#define IB -82   // -0.321 * 256
+
+#define QR  54   // 0.212 * 256
+#define QG -134  // -0.523 * 256
+#define QB  79   // 0.311 * 256
+
+// Subcarrier NCO
+// PHASE_INC ≈ (3.579545 MHz / ~8 MHz sample) * 2^32
+#define PHASE_INC 0x6BCA1AF3UL
+
+// Ramanujan phase: frac(pi*sqrt(163)) * 2^16 ≈ 0xC3A5
+#define RAMANUJAN_INC 0xC3A5
+
+// Palette banks
+#define NBANKS 4
+
+// -------------------- Global state --------------------
+
+volatile uint16_t line = 0;
+volatile uint8_t render_flag = 0;
+
+volatile uint32_t phase = 0;        // 32‑bit NCO
+volatile uint16_t line_phase = 0;   // 16‑bit Ramanujan line phase
+
+volatile uint8_t palette_bank = 0;  // current palette bank
+
+// Example framebuffer: 256x192, 1 byte per pixel (can be replaced)
+#define WIDTH  256
+#define HEIGHT 192
+uint8_t framebuffer[HEIGHT][WIDTH];  // if too big, replace with fetch_pixel()
+
+// -------------------- Quarter‑wave cosine LUT (64 bytes) --------------------
+
+const uint8_t PROGMEM cos_qw[64] = {
+  255,254,254,253,252,250,248,245,
+  242,239,235,231,226,221,216,210,
+  204,198,191,184,177,170,162,154,
+  146,138,130,121,113,104,95, 86,
+  77, 68, 59, 50, 41, 33, 25, 17,
+   9,  2,  0,  0,  0,  2,  9, 17,
+  25, 33, 41, 50, 59, 68, 77, 86,
+  95,104,113,121,130,138,146,154
+};
+
+// -------------------- Palette banks in flash --------------------
+// Fill these with your Nano64 palettes.
+
+const uint8_t PROGMEM palette_r[NBANKS][256] = { /* ... */ };
+const uint8_t PROGMEM palette_g[NBANKS][256] = { /* ... */ };
+const uint8_t PROGMEM palette_b[NBANKS][256] = { /* ... */ };
+
+// -------------------- Fast trig (inline, no extra RAM) --------------------
+
+static inline uint8_t fast_cos(uint8_t ph) {
+    uint8_t q = ph & 0x3F;
+    uint8_t s = ph >> 6;
+
+    switch (s) {
+        case 0: return pgm_read_byte(&cos_qw[q]);
+        case 1: return pgm_read_byte(&cos_qw[63 - q]);
+        case 2: return 255 - pgm_read_byte(&cos_qw[q]);
+        default:return 255 - pgm_read_byte(&cos_qw[63 - q]);
+    }
+}
+
+static inline uint8_t fast_sin(uint8_t ph) {
+    return fast_cos(ph + 64); // 90° shift
+}
+
+// -------------------- Banked RGB → YIQ (fixed‑point) --------------------
+
+static inline void rgb_to_yiq(uint8_t pix, int16_t *Y, int16_t *I, int16_t *Q) {
+    uint8_t bank = palette_bank;
+
+    uint8_t r = pgm_read_byte(&palette_r[bank][pix]);
+    uint8_t g = pgm_read_byte(&palette_g[bank][pix]);
+    uint8_t b = pgm_read_byte(&palette_b[bank][pix]);
+
+    *Y = (YR*r + YG*g + YB*b) >> 8;
+    *I = (IR*r + IG*g + IB*b) >> 8;
+    *Q = (QR*r + QG*g + QB*b) >> 8;
+}
+
+// -------------------- Timer1: scanline driver --------------------
+
+ISR(TIMER1_COMPA_vect) {
+    render_flag = 1;
+
+    if (++line >= LINES_PER_FRAME) line = 0;
+
+    // Ramanujan line phase update
+    line_phase += RAMANUJAN_INC;
+}
+
+// -------------------- Setup --------------------
+
+void ntsc_init(void) {
+    // PORTD as output (8‑bit DAC)
+    DDRD = 0xFF;
+    PORTD = LEVEL_BLANK;
+
+    // Timer1 CTC: one interrupt per scanline
+    TCCR1A = 0;
+    TCCR1B = (1 << WGM12) | (1 << CS10); // CTC, no prescale
+    OCR1A  = 1015;                       // 1016 cycles per line
+    TIMSK1 = (1 << OCIE1A);              // enable compare A interrupt
+
+    sei();
+}
+
+// -------------------- Palette bank control --------------------
+
+void set_palette_bank(uint8_t b) {
+    palette_bank = b & (NBANKS - 1); // if NBANKS is power of 2
+}
+
+// -------------------- Main NTSC render loop --------------------
+
+void ntsc_render_frame_step(void) {
+    if (!render_flag) return;
+    render_flag = 0;
+
+    uint16_t current_line = line;
+
+    uint16_t n = 0;
+
+    // --- 1. H‑SYNC (~4.7 µs ≈ 75 cycles) ---
+    uint8_t c = 75;
+    do {
+        PORTD = LEVEL_SYNC;
+    } while (--c);
+
+    // --- 2. BACK PORCH (~5.8 µs ≈ 93 cycles) ---
+    c = 93;
+    do {
+        PORTD = LEVEL_BLANK;
+    } while (--c);
+
+    // --- 3. COLOR BURST (~20 samples) ---
+    // Use NCO with fixed phase offset (e.g. 180°)
+    uint32_t local_phase = phase + ((uint32_t)line_phase << 8); // Ramanujan line phase
+    uint8_t i = 20;
+    do {
+        local_phase += PHASE_INC;
+        uint8_t ph = (local_phase >> 24) + 128; // 180° burst phase
+        uint8_t cval = fast_cos(ph);
+        // Small ± burst around blanking
+        int16_t Vb = LEVEL_BLANK + ((int8_t)(cval - 128) >> 2);
+        PORTD = (uint8_t)Vb;
+    } while (--i);
+
+    // --- 4. ACTIVE VIDEO (~52 µs ≈ 832 cycles) ---
+    // Here we do a fixed‑count loop for stable timing.
+    uint16_t cnt = 832;
+    uint16_t x = 0;
+
+    do {
+        // Example fetch: 1 sample per pixel, clamp to visible area
+        uint8_t pix = 0;
+        if (current_line < HEIGHT && x < WIDTH) {
+            pix = framebuffer[current_line][x];
+        }
+
+        int16_t Y,I,Q;
+        rgb_to_yiq(pix, &Y,&I,&Q);
+
+        local_phase += PHASE_INC;
+        uint8_t ph = local_phase >> 24;
+        uint8_t ci = fast_cos(ph);
+        uint8_t si = fast_sin(ph);
+
+        int16_t Ci = (int8_t)(ci - 128);
+        int16_t Si = (int8_t)(si - 128);
+
+        int16_t Cc = ((I * Ci) + (Q * Si)) >>
