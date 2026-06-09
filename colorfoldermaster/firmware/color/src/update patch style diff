@@ -1,0 +1,52 @@
+diff --git a/src/main.c b/src/main.c
+index 1a2b3c4..9f8e7d6 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -1,6 +1,18 @@
+ #include <avr/io.h>
+ #include <avr/interrupt.h>
+ #include "ntsc_core.h"
++#include "audio/audio.h"
++#include "synth/synth.h"
++#include "drums/drums.h"
++#include "fm/fm.h"
++#include "pulse/pulse_music.h"
+
++// global audio mix accumulator
++extern volatile uint8_t audio_sample;
+
+ int main(void) {
+     cli();
+@@ -10,6 +22,14 @@ int main(void) {
+     ntsc_init();          // existing NTSC setup
++
++    // NEW: Deluxe Engine initialization
++    audio_init();
++    synth_init();
++    fm_init();
++    pulse_music_init();
++
+     sei();
+
+     for (;;) {
+@@ -18,6 +38,22 @@ int main(void) {
+         // your existing VRAM / tile / color updates
+         // -----------------------------------------
+ 
++        // NEW: music engine tick
++        pulse_music_update();
++
++        // NEW: audio mix
++        float mix = 0.0f;
++        mix += synth_update_mix();
++        mix += drums_update_mix();
++        mix += fm_update_mix();
++
++        if (mix > 1.0f) mix = 1.0f;
++        if (mix < -1.0f) mix = -1.0f;
++
++        // convert to 8‑bit PWM
++        audio_sample = (uint8_t)(mix * 120.0f + 128);
++
+     }
+ }
