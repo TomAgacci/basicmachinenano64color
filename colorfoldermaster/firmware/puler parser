@@ -1,0 +1,24 @@
+void pulse_serial_process_line(char *line) {
+
+    if (strncmp(line, "PULCMD:", 7) == 0) {
+        pulse_handle_cmd(line + 7);
+        return;
+    }
+
+    if (strncmp(line, "PULBIN:", 7) == 0) {
+        pulse_load_line(line + 7);
+        return;
+    }
+
+    if (strncmp(line, "PULVRM:", 7) == 0) {
+        pulse_vram_write(line + 7);
+        return;
+    }
+
+    if (strncmp(line, "PULREQ:", 7) == 0) {
+        pulse_handle_request(line + 7);
+        return;
+    }
+
+    uart_print("PULERR:UNKCMD\n");
+}
