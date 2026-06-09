@@ -1,5 +1,13 @@
 Licensed Under Creative Commons No Derivatives Non Commerical Open Source
 
+What this does is create a layer on Nano64 which allows the black and white signal to be interpreted as color so you just set your bas, or prg files to
+black and white and run them without the color render because it adds 16 color anyways.
+
+Here's the full firmware
+nano64-composite/
+python3 pulse_pack.py nano64-composite nano64_composite.pulse
+nano64_composite.pulse
+
 With sudo nano
 Save pulse_extract.sh to a directory
 Save nano64 pulse file nano64_repo.pulse to same directory
