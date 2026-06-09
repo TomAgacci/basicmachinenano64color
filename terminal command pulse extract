@@ -1,0 +1,22 @@
+python3 - << 'EOF'
+import struct, os
+
+def read_u32(f): return struct.unpack(">I", f.read(4))[0]
+
+with open("nano64_repo.pulse","rb") as f:
+    if not f.read(12).startswith(b"PULSEPKG"):
+        raise SystemExit("Invalid .pulse")
+
+    count = read_u32(f)
+    print("Entries:", count)
+
+    for _ in range(count):
+        plen = read_u32(f)
+        path = f.read(plen).decode()
+        size = read_u32(f)
+        data = f.read(size)
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path,"wb") as o: o.write(data)
+        print("Extracted", path)
+EOF
