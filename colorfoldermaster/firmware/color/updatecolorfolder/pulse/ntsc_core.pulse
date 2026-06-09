@@ -1,0 +1,132 @@
+[PULSE_BUNDLE v1.0]
+NAME: Nano64-NTSC-Core
+AUTHOR: Maximillian + Copilot
+TYPE: video.encoder.ntsc
+VERSION: 1.0.0
+CLOCK: 16MHz
+OUTPUT: Composite NTSC 1Vpp
+DAC: PORTD (8-bit R2R)
+ANALOG_CHAIN: "PORTD → R2R → 330Ω → 220pF → 300Ω → RCA → TV"
+FEATURES: ["YIQ Encoding","Chroma Subcarrier NCO","Ramanujan Phase Dither","Cycle-Tight Renderer","Palette Banks","Tile/Char Fetch"]
+
+[SECTION: CONSTANTS]
+PHASE_INC = 0x6BCA1AF3
+RAMANUJAN_INC = 0xC3A5
+LINES_PER_FRAME = 262
+WIDTH = 256
+HEIGHT = 192
+NBANKS = 4
+LEVEL_SYNC = 0
+LEVEL_BLANK = 77
+LEVEL_WHITE = 255
+
+[SECTION: LUT_COS_QW]
+# 64-byte quarter-wave cosine table
+255,254,254,253,252,250,248,245,
+242,239,235,231,226,221,216,210,
+204,198,191,184,177,170,162,154,
+146,138,130,121,113,104,95,86,
+77,68,59,50,41,33,25,17,
+9,2,0,0,0,2,9,17,
+25,33,41,50,59,68,77,86,
+95,104,113,121,130,138,146,154
+
+[SECTION: PALETTE_BANKS]
+# 4 banks × 256 entries each
+# Bank 0 = Nano64 palette repeated 4×
+# Banks 1–3 = duplicates (modifiable)
+
+[PALETTE_R_BANK0]
+REPEAT64_R, REPEAT64_R, REPEAT64_R, REPEAT64_R
+
+[PALETTE_G_BANK0]
+REPEAT64_G, REPEAT64_G, REPEAT64_G, REPEAT64_G
+
+[PALETTE_B_BANK0]
+REPEAT64_B, REPEAT64_B, REPEAT64_B, REPEAT64_B
+
+# Banks 1–3
+[PALETTE_R_BANK1] REPEAT64_R, REPEAT64_R, REPEAT64_R, REPEAT64_R
+[PALETTE_G_BANK1] REPEAT64_G, REPEAT64_G, REPEAT64_G, REPEAT64_G
+[PALETTE_B_BANK1] REPEAT64_B, REPEAT64_B, REPEAT64_B, REPEAT64_B
+
+[PALETTE_R_BANK2] REPEAT64_R, REPEAT64_R, REPEAT64_R, REPEAT64_R
+[PALETTE_G_BANK2] REPEAT64_G, REPEAT64_G, REPEAT64_G, REPEAT64_G
+[PALETTE_B_BANK2] REPEAT64_B, REPEAT64_B, REPEAT64_B, REPEAT64_B
+
+[PALETTE_R_BANK3] REPEAT64_R, REPEAT64_R, REPEAT64_R, REPEAT64_R
+[PALETTE_G_BANK3] REPEAT64_G, REPEAT64_G, REPEAT64_G, REPEAT64_G
+[PALETTE_B_BANK3] REPEAT64_B, REPEAT64_B, REPEAT64_B, REPEAT64_B
+
+[SECTION: TILE_FETCH]
+# Nano64 tile/character fetcher
+FUNC fetch_pixel(line,x):
+    tile_y = line >> 3
+    tile_x = x >> 3
+    IF tile_y>=24 OR tile_x>=32: RETURN 0
+    char_index = tilemap[tile_y][tile_x]
+    color_index = colormap[tile_y][tile_x]
+    row = line & 7
+    bits = charset[char_index][row]
+    col = x & 7
+    bit = (bits >> (7-col)) & 1
+    IF bit==0: RETURN 0
+    RETURN color_index
+
+[SECTION: NTSC_CORE]
+# Cycle-tight NTSC renderer with Ramanujan-phase chroma
+INIT:
+    DDRD = 0xFF
+    PORTD = LEVEL_BLANK
+    TIMER1: CTC, OCR1A=1015, ISR=scanline
+    ENABLE_INTERRUPTS
+
+ISR scanline:
+    render_flag = 1
+    line = (line+1) % LINES_PER_FRAME
+    line_phase += RAMANUJAN_INC
+
+FUNC render_frame_step():
+    IF !render_flag: RETURN
+    render_flag = 0
+    local_line = line
+
+    # --- SYNC ---
+    LOOP 75: PORTD = LEVEL_SYNC
+
+    # --- BACK PORCH ---
+    LOOP 93: PORTD = LEVEL_BLANK
+
+    # --- COLOR BURST ---
+    local_phase = phase + (line_phase << 8)
+    LOOP 20:
+        local_phase += PHASE_INC
+        ph = (local_phase >> 24) + 128
+        cval = fast_cos(ph)
+        Vb = LEVEL_BLANK + ((cval-128)>>2)
+        PORTD = CLAMP(Vb)
+
+    # --- ACTIVE VIDEO ---
+    cnt = 832
+    x = 0
+    LOOP cnt:
+        pix = fetch_pixel(local_line,x)
+        (Y,I,Q) = RGB_TO_YIQ(pix)
+        local_phase += PHASE_INC
+        ph = local_phase >> 24
+        ci = fast_cos(ph)
+        si = fast_sin(ph)
+        Ci = ci-128
+        Si = si-128
+        Cc = ((I*Ci)+(Q*Si))>>8
+        V = LEVEL_BLANK + ((Y*179)>>8) + Cc
+        PORTD = CLAMP(V)
+        x += 1
+
+    phase = local_phase
+
+    # --- FRONT PORCH ---
+    LOOP 16: PORTD = LEVEL_BLANK
+
+[SECTION: FOOTER]
+END_PULSE
