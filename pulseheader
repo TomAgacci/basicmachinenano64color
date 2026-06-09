@@ -1,0 +1,5 @@
+[PULSE HEADER]
+[ENTRY COUNT]
+For each entry:
+    [PATH LENGTH][PATH]
+    [FILE SIZE][FILE BYTES]
