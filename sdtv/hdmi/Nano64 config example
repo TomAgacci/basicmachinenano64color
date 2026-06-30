@@ -1,0 +1,11 @@
+nano.sprite_blend = {
+    format = RGBA32;
+
+    modes = {
+        NORMAL   = "A_s * S + (1 - A_s) * B";
+        ADD      = "clamp(B + k * S)";
+        MULTIPLY = "B * S";
+    };
+
+    default_mode = NORMAL;
+};
