@@ -1,0 +1,108 @@
+2. Nano64 Firmware Presets (BasicMachineNano64Color)
+These match each composite mode’s real visible region (~640).
+
+NTSC preset
+
+nano.video_mode = NTSC
+nano.fb_width = 256
+nano.fb_height = 240
+nano.scanline_profile = NTSC_240p
+nano.color_phase = NTSC_STANDARD
+nano.hscale = 2.50   # 256 → ~640
+nano.vscale = 2.00   # 240 → 480
+
+PAL preset
+
+nano.video_mode = PAL
+nano.fb_width = 256
+nano.fb_height = 240
+nano.scanline_profile = PAL_288p
+nano.color_phase = PAL_ALTERNATE
+nano.hscale = 2.50   # 256 → ~640
+nano.vscale = 2.40   # 240 → 576
+
+
+NTSC-J preset
+
+nano.black_pedestal = 0
+nano.color_phase = NTSC_STANDARD
+
+PAL60 preset
+
+nano.video_mode = PAL60
+nano.color_phase = PAL_ALTERNATE
+nano.vscale = 2.00
+
+SECAM preset
+
+nano.color_phase = SECAM_FM
+nano.vscale = 2.40
+
+COMBINED presets
+
+# cmdline
+video=Composite-1:720x480@60i,vc4.tv_norm=NTSC,margin_left=40,margin_right=40,margin_top=10,margin_bottom=10
+
+# nano64 firmware
+nano.video_mode = NTSC
+nano.fb_width = 256
+nano.fb_height = 240
+nano.scanline_profile = NTSC_240p
+nano.color_phase = NTSC_STANDARD
+nano.hscale = 2.50
+nano.vscale = 2.00
+
+PAL COMBINED presets
+
+# cmdline
+video=Composite-1:720x576@50i,vc4.tv_norm=PAL,margin_left=40,margin_right=40,margin_top=20,margin_bottom=20
+
+# nano64 firmware
+nano.video_mode = PAL
+nano.fb_width = 256
+nano.fb_height = 240
+nano.scanline_profile = PAL_288p
+nano.color_phase = PAL_ALTERNATE
+nano.hscale = 2.50
+nano.vscale = 2.40
+
+Overscan‑Corrected Presets (per composite mode)
+These presets assume:
+
+Nano64 framebuffer: 256×240
+Visible composite region: ≈640×480 (NTSC) or ≈640×576 (PAL)
+Overscan varies by TV → we correct margins so Nano64 fills the visible region cleanly
+NTSC (60i / 240p)
+
+video=Composite-1:720x480@60i,vc4.tv_norm=NTSC,\
+margin_left=40,margin_right=40,margin_top=12,margin_bottom=12
+
+NTSC-J
+
+video=Composite-1:720x480@60i,vc4.tv_norm=NTSC-J,\
+margin_left=40,margin_right=40,margin_top=12,margin_bottom=12
+
+PAL
+
+video=Composite-1:720x576@50i,vc4.tv_norm=PAL,\
+margin_left=40,margin_right=40,margin_top=24,margin_bottom=24
+
+Why:
+
+720 − 80 = 640
+
+576 − 48 = 528 → maps 240 → 288 → 528 cleanly
+
+PAL60
+
+video=Composite-1:720x480@60i,vc4.tv_norm=PAL60,\
+margin_left=40,margin_right=40,margin_top=12,margin_bottom=12
+
+SECAM
+
+video=Composite-1:720x576@50i,vc4.tv_norm=SECAM,\
+margin_left=40,margin_right=40,margin_top=24,margin_bottom=24
+
+
+
+
