@@ -1,0 +1,36 @@
+3. Nano64 config blocks per norm
+NTSC
+ini
+zero_circle.NTSC = {
+    lambda  = 0.10;
+    epsilon = 1e-6;
+    matrix  = BT601_NTSC;
+};
+NTSC‑J
+ini
+zero_circle.NTSC_J = {
+    lambda  = 0.08;
+    epsilon = 1e-6;
+    matrix  = BT601_NTSC_NO_PEDESTAL;
+};
+PAL
+ini
+zero_circle.PAL = {
+    lambda  = 0.06;
+    epsilon = 1e-6;
+    matrix  = BT601_PAL;
+};
+PAL60
+ini
+zero_circle.PAL60 = {
+    lambda  = 0.08;
+    epsilon = 1e-6;
+    matrix  = BT601_PAL60;
+};
+SECAM
+ini
+zero_circle.SECAM = {
+    lambda  = 0.04;
+    epsilon = 1e-6;
+    matrix  = SECAM_YUV_MATRIX;
+};
