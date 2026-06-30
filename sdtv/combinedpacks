@@ -1,0 +1,59 @@
+Full combined presets pack (per mode)
+
+# cmdline
+video=Composite-1:720x480@60i,vc4.tv_norm=NTSC,\
+margin_left=40,margin_right=40,margin_top=12,margin_bottom=12
+
+# nano64 core
+nano.video_mode       = NTSC
+nano.fb_width         = 256
+nano.fb_height        = 240
+nano.hscale           = 2.50
+nano.vscale           = 2.00
+
+# colorburst
+nano.colorburst_phase = 0.0
+nano.colorburst_amplitude = 1.00
+nano.chroma_lowpass   = 0.90
+nano.luma_lowpass     = 1.00
+nano.pedestal         = 7.5
+nano.yc_delay         = +0.5
+
+# sprite/palette
+nano.sprite.edge_soften = 0.15
+nano.sprite.dither      = 0.10
+# per‑color corrections as above
+
+PAL pack
+ini
+# cmdline
+video=Composite-1:720x576@50i,vc4.tv_norm=PAL,\
+margin_left=40,margin_right=40,margin_top=24,margin_bottom=24
+
+# nano64 core
+nano.video_mode       = PAL
+nano.fb_width         = 256
+nano.fb_height        = 240
+nano.hscale           = 2.50
+nano.vscale           = 2.40
+
+# colorburst
+nano.colorburst_phase = ALTERNATE
+nano.colorburst_amplitude = 0.90
+nano.chroma_lowpass   = 0.85
+nano.luma_lowpass     = 1.05
+nano.pedestal         = 0.0
+nano.yc_delay         = 0.0
+
+# sprite/palette
+nano.sprite.edge_soften = 0.20
+nano.sprite.dither      = 0.15
+# per‑color PAL/SECAM desat entries
+NTSC‑J / PAL60 / SECAM packs
+You’d clone NTSC/PAL packs and adjust:
+
+NTSC‑J: pedestal = 0.0, slightly higher saturation.
+
+PAL60: PAL colorburst, NTSC timing → use NTSC vscale, PAL colorburst tuning.
+
+SECAM: chroma_system = FM, stronger desat and edge soften.
