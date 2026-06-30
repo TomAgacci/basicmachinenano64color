@@ -3,3 +3,39 @@ nano.colorburst_frequency = 3.579545MHz   # NTSC
 nano.colorburst_frequency_pal = 4.433618MHz
 nano.chroma_lowpass = 1.0                 # 1.0 = full, <1.0 = softer
 nano.luma_lowpass = 1.0
+
+NTSC
+ini
+nano.mode = NTSC
+nano.colorburst_phase = 0.0              # radians
+nano.colorburst_amplitude = 1.00
+nano.chroma_lowpass = 0.90
+nano.luma_lowpass = 1.00
+nano.pedestal = 7.5                      # IRE
+nano.yc_delay = +0.5                     # sub‑pixel Y/C alignment
+NTSC‑J
+ini
+nano.mode = NTSC-J
+nano.colorburst_phase = 0.0
+nano.colorburst_amplitude = 1.00
+nano.chroma_lowpass = 0.95
+nano.pedestal = 0.0
+nano.yc_delay = +0.5
+PAL / PAL60
+ini
+nano.mode = PAL
+nano.colorburst_phase = ALTERNATE        # flip every line
+nano.colorburst_amplitude = 0.90
+nano.chroma_lowpass = 0.85
+nano.luma_lowpass = 1.05
+nano.pedestal = 0.0
+nano.yc_delay = 0.0
+SECAM
+ini
+nano.mode = SECAM
+nano.chroma_system = FM
+nano.fm_deviation = 1.00
+nano.chroma_lowpass = 0.70
+nano.luma_lowpass = 1.10
+nano.pedestal = 0.0
+nano.yc_delay = 0.0
