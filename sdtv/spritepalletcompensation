@@ -1,0 +1,41 @@
+Per‑Mode Nano64 Sprite/Palette Compensation
+Composite video distorts color and edges.
+Nano64’s 16‑color palette can be compensated per mode to preserve clarity.
+
+NTSC Compensation
+nano.palette.u_shift = +2
+nano.palette.v_shift = -1
+nano.sprite.edge_soften = 0.15
+nano.sprite.dither = 0.10
+nano.palette.saturation = 0.90
+
+Reason: NTSC hue drift → slight UV correction
+
+NTSC‑J Compensation
+
+nano.palette.u_shift = +1
+nano.palette.v_shift = -1
+nano.sprite.edge_soften = 0.10
+nano.palette.saturation = 1.00
+
+PAL Compensation
+
+nano.palette.u_shift = 0
+nano.palette.v_shift = 0
+nano.palette.saturation = 0.85
+nano.sprite.edge_soften = 0.20
+nano.sprite.dither = 0.15
+Reason: PAL alternation stabilizes hue but reduces saturation
+
+PAL60 Compensation
+
+nano.palette.saturation = 0.90
+nano.sprite.edge_soften = 0.15
+SECAM Compensation
+Code
+nano.palette.saturation = 0.75
+nano.palette.u_shift = 0
+nano.palette.v_shift = 0
+nano.sprite.edge_soften = 0.25
+nano.sprite.dither = 0.20
+Reason: SECAM FM chroma → stable but low saturation
