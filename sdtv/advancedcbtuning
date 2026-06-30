@@ -1,0 +1,5 @@
+# Common base
+nano.colorburst_frequency = 3.579545MHz   # NTSC
+nano.colorburst_frequency_pal = 4.433618MHz
+nano.chroma_lowpass = 1.0                 # 1.0 = full, <1.0 = softer
+nano.luma_lowpass = 1.0
