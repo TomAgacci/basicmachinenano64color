@@ -1,0 +1,41 @@
+Per‑Mode Color‑Burst Tuning (Nano64 → Composite encoder)
+Nano64’s BasicMachineNano64Color head produces digital RGB, which the composite encoder converts into:
+
+NTSC: QAM colorburst
+
+PAL: phase‑alternating QAM
+
+SECAM: FM chroma
+
+These presets tune the encoder so Nano64’s 16‑color palette stays stable.
+
+NTSC
+nano.colorburst_phase = 0.0
+nano.colorburst_amplitude = 1.00
+nano.chroma_bandwidth = 1.00
+nano.luma_gain = 1.00
+nano.pedestal = 7.5   # NTSC setup level
+
+NTSC-J
+nano.pedestal = 0.0
+nano.colorburst_phase = 0.0
+nano.colorburst_amplitude = 1.00
+
+PAL
+nano.colorburst_phase = ALTERNATE
+nano.colorburst_amplitude = 0.90
+nano.chroma_bandwidth = 0.85
+nano.luma_gain = 1.05
+nano.pedestal = 0.0
+
+PAL60
+nano.colorburst_phase = ALTERNATE
+nano.colorburst_amplitude = 0.95
+nano.chroma_bandwidth = 0.90
+
+SECAM
+nano.chroma_system = FM
+nano.fm_deviation = 1.00
+nano.luma_gain = 1.10
+nano.chroma_bandwidth = 0.70
+
