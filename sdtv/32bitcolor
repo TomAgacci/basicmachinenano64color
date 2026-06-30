@@ -1,0 +1,19 @@
+nano.mode = NANO64_32BIT_ZERO_CIRCLE;
+
+nano.fb_width   = 256;
+nano.fb_height  = 240;
+nano.fb_format  = RGBA32;      # 32‑bit per pixel
+nano.hscale     = 2.50;        # same as before
+nano.vscale     = 2.00 or 2.40 # NTSC/PAL
+
+nano.zero_circle = {
+    lambda   = 0.10;           # strength of pull toward zero
+    epsilon  = 1e-6;           # avoid division by zero
+    space    = YUV;            # operate in chroma space
+};
+
+nano.color_pipeline = {
+    input   = COMPOSITE_YUV;   # from colorburst decoder
+    op      = ZERO_CIRCLE;     # apply math above
+    output  = RGBA32;          # final framebuffer format
+};
