@@ -1,0 +1,51 @@
+720 is the maximum resolution only 640 is viewable
+
+4. Overscan Translation for Nano64
+Overscan does not change Nano64’s internal resolution.
+It only crops the composite output.
+
+video=Composite-1:720x576@50i,margin_left=10,margin_right=10,margin_top=15,margin_bottom=15
+
+
+Nano64 effect:
+
+Horizontal crop: 720 → 700 visible
+
+Vertical crop: 576 → 546 visible
+
+Nano64 framebuffer (256×240) is scaled into this cropped region.
+
+disable_overscan=1
+
+What “720 is actually 640” means
+Composite video uses ITU-R BT.601 sampling:
+
+Digital sampling width: 720 samples per line
+
+Active picture: ≈704 samples
+
+Historically visible region: ≈640 pixels
+
+video=Composite-1:720x480@60i
+
+1. CMDLINE PRESETS (Corrected for 640-visible region)
+These are ready to paste into /boot/firmware/cmdline.txt.
+
+NTSC (240p-friendly)
+
+video=Composite-1:720x480@60i,vc4.tv_norm=NTSC,margin_left=40,margin_right=40,margin_top=10,margin_bottom=10
+→ 720 samples, ~640 visible
+→ Overscan trimmed to center Nano64’s 256×240
+
+PAL (288p-friendly)
+video=Composite-1:720x576@50i,vc4.tv_norm=PAL,margin_left=40,margin_right=40,margin_top=20,margin_bottom=20
+
+NTSC-J (no pedestal)
+video=Composite-1:720x480@60i,vc4.tv_norm=NTSC-J,margin_left=40,margin_right=40,margin_top=10,margin_bottom=10
+
+PAL60
+video=Composite-1:720x480@60i,vc4.tv_norm=PAL60,margin_left=40,margin_right=40,margin_top=10,margin_bottom=10
+
+SECAM
+video=Composite-1:720x576@50i,vc4.tv_norm=SECAM,margin_left=40,margin_right=40,margin_top=20,margin_bottom=20
+
