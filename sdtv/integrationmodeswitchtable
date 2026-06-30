@@ -1,0 +1,9 @@
+Integration into the mode‑switch table
+You can extend the earlier switch like:
+
+ini
+if (nano.mode_32bit_enabled) {
+    nano.mode = NANO64_32BIT_ZERO_CIRCLE;
+    nano.fb_format = RGBA32;
+    nano.color_pipeline = ZERO_CIRCLE_PIPELINE;
+}
