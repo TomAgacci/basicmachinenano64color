@@ -1,0 +1,43 @@
+Palette Compensation Payloads
+
+These are the mode‑specific UV shifts and saturation corrections.
+
+NTSC
+ini
+NTSC_COMPENSATION = {
+    u_shift = +2;
+    v_shift = -1;
+    saturation = 0.90;
+    edge_soften = 0.15;
+    dither = 0.10;
+}
+NTSC-J
+ini
+NTSC_J_COMPENSATION = {
+    u_shift = +1;
+    v_shift = -1;
+    saturation = 1.00;
+    edge_soften = 0.10;
+}
+PAL
+ini
+PAL_COMPENSATION = {
+    u_shift = 0;
+    v_shift = 0;
+    saturation = 0.85;
+    edge_soften = 0.20;
+    dither = 0.15;
+}
+PAL60
+ini
+PAL60_COMPENSATION = {
+    saturation = 0.90;
+    edge_soften = 0.15;
+}
+SECAM
+ini
+SECAM_COMPENSATION = {
+    saturation = 0.75;
+    edge_soften = 0.25;
+    dither = 0.20;
+}
