@@ -1,0 +1,31 @@
+screen_w = hdmi_mode.width;
+screen_h = hdmi_mode.height;
+
+# Largest 4x3 that fits
+viewport_h = screen_h;
+viewport_w = (screen_h * 4) / 3;
+
+if (viewport_w > screen_w) {
+    viewport_w = screen_w;
+    viewport_h = (screen_w * 3) / 4;
+}
+
+viewport_x = (screen_w - viewport_w) / 2;
+viewport_y = (screen_h - viewport_h) / 2;
+
+# Render Nano64 framebuffer (256x240 or 32-bit) into viewport
+nano.render_framebuffer(
+    src_w = 256,
+    src_h = 240,
+    dst_x = viewport_x,
+    dst_y = viewport_y,
+    dst_w = viewport_w,
+    dst_h = viewport_h
+);
+
+# Fill outside with black
+nano.fill_rect(0, 0, screen_w, viewport_y, BLACK);                         # top
+nano.fill_rect(0, viewport_y + viewport_h, screen_w, screen_h, BLACK);     # bottom
+nano.fill_rect(0, viewport_y, viewport_x, viewport_h, BLACK);              # left
+nano.fill_rect(viewport_x + viewport_w, viewport_y,
+               screen_w - (viewport_x + viewport_w), viewport_h, BLACK);   # right
