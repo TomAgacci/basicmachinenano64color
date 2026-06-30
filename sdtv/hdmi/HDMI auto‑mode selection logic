@@ -1,0 +1,22 @@
+# 1. Read EDID
+edid_modes = HDMI.get_supported_modes();   # list of {width, height, refresh}
+
+# 2. Preferred order (retro‑friendly)
+preferred = [
+    {1280, 720, 60},
+    {1920, 1080, 60},
+    {640, 480, 60}
+];
+
+# 3. Select best match
+for (p in preferred) {
+    if (edid_modes.contains(p)) {
+        hdmi_mode = p;
+        break;
+    }
+}
+
+# Fallback: use EDID's "preferred" if none match
+if (!hdmi_mode) {
+    hdmi_mode = HDMI.get_preferred_mode();
+}
