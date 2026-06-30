@@ -1,0 +1,50 @@
+Nano64 HDMI pipeline (4×3 auto‑pillarbox)
+Step 1 — HDMI auto‑detect
+Nano64 reads EDID:
+
+720p supported
+
+1080p supported
+
+etc.
+
+Step 2 — Choose HDMI mode
+Example:
+
+Code
+hdmi_mode = 1280x720@60
+Step 3 — Compute 4×3 viewport
+Code
+viewport_width  = 960
+viewport_height = 720
+viewport_x = (1280 - 960) / 2 = 160
+viewport_y = 0
+Step 4 — Scale Nano64 framebuffer
+Your internal framebuffer (256×240 or 32‑bit mode) is scaled to 960×720.
+
+Step 5 — Fill outside region with black
+Left bar: 160 px
+Right bar: 160 px
+Top/bottom: none (full height)
+
+🧬 Full auto‑detect logic block (clean version)
+ini
+# HDMI EDID negotiation
+hdmi_mode = HDMI.get_preferred_mode();   # e.g., 1280x720
+
+# Compute 4x3 viewport
+screen_w = hdmi_mode.width;
+screen_h = hdmi_mode.height;
+
+viewport_h = screen_h;
+viewport_w = (screen_h * 4) / 3;
+
+viewport_x = (screen_w - viewport_w) / 2;
+viewport_y = 0;
+
+# Render Nano64 framebuffer into viewport
+nano.render_to_viewport(viewport_x, viewport_y, viewport_w, viewport_h);
+
+# Fill outside with black
+nano.clear_outside_viewport();
+This is exactly how retro‑accurate HDMI output is done.
