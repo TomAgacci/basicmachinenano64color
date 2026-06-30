@@ -1,0 +1,120 @@
+Zero‑circle chroma reconstruction variants
+You can define variants of the zero‑circle operator for different behaviors.
+
+Base operator (recap)
+(
+𝑈
+′
+,
+𝑉
+′
+)
+=
+(
+𝑈
+,
+𝑉
+)
+−
+𝜆
+⋅
+(
+𝑈
+,
+𝑉
+)
+𝑈
+2
++
+𝑉
+2
++
+𝜖
+Variant A: Soft pull (preserve saturation)
+Lower 
+𝜆
+, e.g. 
+0.03
+–
+0.06
+.
+
+Use for PAL/SECAM where chroma is more stable.
+
+ini
+zero_circle.SOFT = {
+    lambda  = 0.05;
+    epsilon = 1e-6;
+};
+Variant B: Hard pull (aggressive noise kill)
+Higher 
+𝜆
+, e.g. 
+0.10
+–
+0.20
+.
+
+Use for noisy NTSC sources.
+
+ini
+zero_circle.HARD = {
+    lambda  = 0.15;
+    epsilon = 1e-6;
+};
+Variant C: Directional pull (bias toward known palette)
+Add a bias vector 
+(
+𝑈
+0
+,
+𝑉
+0
+)
+ from your known Nano64 palette:
+
+(
+𝑈
+′
+,
+𝑉
+′
+)
+=
+(
+𝑈
+,
+𝑉
+)
+−
+𝜆
+⋅
+(
+𝑈
+−
+𝑈
+0
+,
+𝑉
+−
+𝑉
+0
+)
+(
+𝑈
+−
+𝑈
+0
+)
+2
++
+(
+𝑉
+−
+𝑉
+0
+)
+2
++
+𝜖
+This “snaps” colors toward the nearest palette direction while still reconstructing 32‑bit.
