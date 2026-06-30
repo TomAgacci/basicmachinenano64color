@@ -1,0 +1,59 @@
+Per‑color Nano64 correction (16‑color palette)
+Assume base palette indexed 0–15. We apply mode‑dependent UV shifts and saturation scaling.
+
+Generic structure
+ini
+# For each color index c:
+nano.palette[c].u_offset_ntsc   = ...
+nano.palette[c].v_offset_ntsc   = ...
+nano.palette[c].sat_scale_ntsc  = ...
+nano.palette[c].u_offset_pal    = ...
+nano.palette[c].v_offset_pal    = ...
+nano.palette[c].sat_scale_pal   = ...
+nano.palette[c].sat_scale_secam = ...
+Example mapping (you can extend)
+ini
+# 0: black
+nano.palette[0].u_offset_ntsc   = 0
+nano.palette[0].v_offset_ntsc   = 0
+nano.palette[0].sat_scale_ntsc  = 1.00
+
+# 1: dark blue
+nano.palette[1].u_offset_ntsc   = +2
+nano.palette[1].v_offset_ntsc   = -1
+nano.palette[1].sat_scale_ntsc  = 0.95
+nano.palette[1].sat_scale_pal   = 0.90
+nano.palette[1].sat_scale_secam = 0.80
+
+# 2: dark red
+nano.palette[2].u_offset_ntsc   = -1
+nano.palette[2].v_offset_ntsc   = +2
+nano.palette[2].sat_scale_ntsc  = 0.92
+
+# 3: dark green
+nano.palette[3].u_offset_ntsc   = 0
+nano.palette[3].v_offset_ntsc   = 0
+nano.palette[3].sat_scale_ntsc  = 0.95
+
+# 4: mid blue
+nano.palette[4].u_offset_ntsc   = +2
+nano.palette[4].v_offset_ntsc   = -1
+nano.palette[4].sat_scale_ntsc  = 0.90
+
+# 5: mid red
+nano.palette[5].u_offset_ntsc   = -1
+nano.palette[5].v_offset_ntsc   = +2
+nano.palette[5].sat_scale_ntsc  = 0.88
+
+# 6: mid green
+nano.palette[6].u_offset_ntsc   = 0
+nano.palette[6].v_offset_ntsc   = 0
+nano.palette[6].sat_scale_ntsc  = 0.92
+
+# 7: gray
+nano.palette[7].u_offset_ntsc   = 0
+nano.palette[7].v_offset_ntsc   = 0
+nano.palette[7].sat_scale_ntsc  = 1.00
+
+# 8–15: repeat pattern, stronger desat for PAL/SECAM
+You’d tune these empirically by looking at color fringing on a real composite display.
