@@ -1,0 +1,47 @@
+switch (vc4.tv_norm) {
+
+    case NTSC:
+        nano.mode = NTSC_240p;
+        nano.hscale = 2.50;
+        nano.vscale = 2.00;
+        nano.overscan = {40,40,12,12};
+        nano.color = NTSC_COLORBURST;
+        nano.palette = NTSC_COMPENSATION;
+        break;
+
+    case NTSC_J:
+        nano.mode = NTSC_240p;
+        nano.hscale = 2.50;
+        nano.vscale = 2.00;
+        nano.overscan = {40,40,12,12};
+        nano.color = NTSC_J_COLORBURST;
+        nano.palette = NTSC_J_COMPENSATION;
+        break;
+
+    case PAL:
+        nano.mode = PAL_288p;
+        nano.hscale = 2.50;
+        nano.vscale = 2.40;
+        nano.overscan = {40,40,24,24};
+        nano.color = PAL_COLORBURST;
+        nano.palette = PAL_COMPENSATION;
+        break;
+
+    case PAL60:
+        nano.mode = PAL60_240p;
+        nano.hscale = 2.50;
+        nano.vscale = 2.00;
+        nano.overscan = {40,40,12,12};
+        nano.color = PAL60_COLORBURST;
+        nano.palette = PAL60_COMPENSATION;
+        break;
+
+    case SECAM:
+        nano.mode = SECAM_288p;
+        nano.hscale = 2.50;
+        nano.vscale = 2.40;
+        nano.overscan = {40,40,24,24};
+        nano.color = SECAM_COLORBURST;
+        nano.palette = SECAM_COMPENSATION;
+        break;
+}
