@@ -1,0 +1,8 @@
+These match the corrected 640‑visible region:
+
+NTSC / NTSC-J / PAL60
+ini
+{ left=40, right=40, top=12, bottom=12 }
+PAL / SECAM
+ini
+{ left=40, right=40, top=24, bottom=24 }
