@@ -1,0 +1,45 @@
+Colorburst Payloads
+(referenced above)NTSC runtime
+
+ini
+NTSC_COLORBURST = {
+    phase = 0.0;
+    amplitude = 1.00;
+    chroma_lowpass = 0.90;
+    luma_lowpass = 1.00;
+    pedestal = 7.5;
+    yc_delay = +0.5;
+}
+NTSC-J
+ini
+NTSC_J_COLORBURST = {
+    phase = 0.0;
+    amplitude = 1.00;
+    chroma_lowpass = 0.95;
+    pedestal = 0.0;
+    yc_delay = +0.5;
+}
+PAL
+ini
+PAL_COLORBURST = {
+    phase = ALTERNATE;
+    amplitude = 0.90;
+    chroma_lowpass = 0.85;
+    luma_lowpass = 1.05;
+    pedestal = 0.0;
+}
+PAL60
+ini
+PAL60_COLORBURST = {
+    phase = ALTERNATE;
+    amplitude = 0.95;
+    chroma_lowpass = 0.90;
+}
+SECAM
+ini
+SECAM_COLORBURST = {
+    chroma_system = FM;
+    fm_deviation = 1.00;
+    chroma_lowpass = 0.70;
+    luma_lowpass = 1.10;
+}
