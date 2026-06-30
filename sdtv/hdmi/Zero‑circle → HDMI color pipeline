@@ -1,0 +1,24 @@
+# 1. Composite decode
+for each pixel p in nano.fb:
+    (Y,U,V) = composite_decode(p);
+
+    # 2. Zero-circle chroma
+    mag = sqrt(U*U + V*V + epsilon);
+    Uz  = U - lambda * (U / mag);
+    Vz  = V - lambda * (V / mag);
+
+    # 3. YUV -> RGB (norm-specific matrix)
+    (R,G,B) = M_norm * (Y,Uz,Vz);
+
+    # 4. Pack to 32-bit
+    A = 255;  # or confidence metric
+    nano.fb32[p] = pack_rgba32(R,G,B,A);
+
+# 5. Sprite blending in 32-bit
+nano.blend_sprites_rgba32(nano.fb32);
+
+# 6. Render fb32 into 4x3 viewport (pillarbox renderer above)
+nano.render_framebuffer_32bit_to_viewport(nano.fb32, viewport);
+
+# 7. HDMI output
+HDMI.present(nano.hdmi_backbuffer);
