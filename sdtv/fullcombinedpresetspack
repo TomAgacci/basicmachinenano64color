@@ -1,0 +1,58 @@
+Full Combined Presets Pack (all systems unified)
+This is the final unified configuration:
+
+ini
+nano.mode_switch = ENABLED;
+
+nano.modes = {
+    NTSC: {
+        raster = 720x480;
+        visible = 640x456;
+        hscale = 2.50;
+        vscale = 2.00;
+        overscan = {40,40,12,12};
+        color = NTSC_COLORBURST;
+        palette = NTSC_COMPENSATION;
+    },
+
+    NTSC_J: {
+        raster = 720x480;
+        visible = 640x456;
+        hscale = 2.50;
+        vscale = 2.00;
+        overscan = {40,40,12,12};
+        color = NTSC_J_COLORBURST;
+        palette = NTSC_J_COMPENSATION;
+    },
+
+    PAL: {
+        raster = 720x576;
+        visible = 640x528;
+        hscale = 2.50;
+        vscale = 2.40;
+        overscan = {40,40,24,24};
+        color = PAL_COLORBURST;
+        palette = PAL_COMPENSATION;
+    },
+
+    PAL60: {
+        raster = 720x480;
+        visible = 640x456;
+        hscale = 2.50;
+        vscale = 2.00;
+        overscan = {40,40,12,12};
+        color = PAL60_COLORBURST;
+        palette = PAL60_COMPENSATION;
+    },
+
+    SECAM: {
+        raster = 720x576;
+        visible = 640x528;
+        hscale = 2.50;
+        vscale = 2.40;
+        overscan = {40,40,24,24};
+        color = SECAM_COLORBURST;
+        palette = SECAM_COMPENSATION;
+    }
+};
+This is the complete, unified, runtime‑adaptive Nano64 composite system.
