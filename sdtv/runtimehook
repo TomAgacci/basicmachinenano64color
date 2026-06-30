@@ -1,0 +1,7 @@
+switch (vc4.tv_norm) {
+    case NTSC:   zero_circle.use = zero_circle.NTSC;   break;
+    case NTSC_J: zero_circle.use = zero_circle.NTSC_J; break;
+    case PAL:    zero_circle.use = zero_circle.PAL;    break;
+    case PAL60:  zero_circle.use = zero_circle.PAL60;  break;
+    case SECAM:  zero_circle.use = zero_circle.SECAM;  break;
+}
