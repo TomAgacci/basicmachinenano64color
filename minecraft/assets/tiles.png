@@ -1,0 +1,9 @@
+# tiles.png
+# Placeholder: 8x8 monochrome tilesheet for blocks.
+# In a real project, this is a binary PNG file.
+# Suggested tiles:
+# 0: Air (empty)
+# 1: DIRT pattern
+# 2: STONE pattern
+# 3: GRASS (dirt + top line)
+# 4: WOOD (vertical stripes)
