@@ -1,0 +1,11 @@
+{
+  "default": "microcraft.bas",
+  "programs": [
+    {
+      "name": "Minecraft Demake",
+      "file": "microcraft.bas",
+      "description": "2D tile-based Minecraft-style game for Nano64.",
+      "version": "1.0.0"
+    }
+  ]
+}
