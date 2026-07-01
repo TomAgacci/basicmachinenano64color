@@ -1,0 +1,15 @@
+{
+  "firmware": [
+    "firmware/build/nano64.bin",
+    "firmware/build/composite.bin",
+    "firmware/build/engine.bin"
+  ],
+  "programs": [
+    "programs/microcraft.bas"
+  ],
+  "assets": [
+    "assets/tiles.png",
+    "assets/world.seed",
+    "assets/colors.map"
+  ]
+}
