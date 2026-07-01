@@ -1,0 +1,37 @@
+nano64-microcraft/
+│
+├── firmware/
+│   ├── nano64/                     ← Core Nano64 VM + video + input
+│   │   ├── src/
+│   │   ├── assets/
+│   │   └── Makefile
+│   │
+│   ├── composite/                  ← Color head (pulse interpreter)
+│   │   ├── src/
+│   │   ├── palette/
+│   │   └── Makefile
+│   │
+│   ├── engine/                     ← Optional 2D/3D engine integration
+│   │   ├── src/
+│   │   └── Makefile
+│   │
+│   └── build/                      ← Final firmware binaries
+│       ├── nano64.bin
+│       ├── composite.bin
+│       └── engine.bin
+│
+├── programs/
+│   ├── microcraft.bas              ← Your actual game
+│   └── manifest.json               ← Program metadata
+│
+├── assets/
+│   ├── tiles.png                   ← Optional tile sheet (monochrome)
+│   ├── world.seed                  ← Optional world seed file
+│   └── colors.map                  ← Optional color mapping overrides
+│
+├── pulse/
+│   ├── pulse_pack.py               ← Bundler
+│   ├── pulse_extract.py
+│   └── pulse_spec.json             ← Defines what goes into the pulse
+│
+└── microcraft.pulse                ← Output (generated)
