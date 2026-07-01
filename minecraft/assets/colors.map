@@ -1,0 +1,9 @@
+# colors.map
+# Map block IDs to composite color indices (0-15).
+# Format: BLOCK_ID:COLOR_INDEX
+
+0:0    # Air -> background
+1:6    # Dirt -> brown
+2:7    # Stone -> gray
+3:2    # Grass -> green
+4:4    # Wood -> dark brown
