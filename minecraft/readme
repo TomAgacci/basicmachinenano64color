@@ -1,2 +1,25 @@
-
 python3 pulse_pack.py nano64-microcraft microcraft.pulse
+
+cd nano64-microcraft/firmware/nano64
+make
+
+cd ../composite
+make
+
+cd ../engine
+make
+
+asset pipeline
+
+cd nano64-microcraft/firmware/nano64
+make
+
+cd ../composite
+make
+
+cd ../engine
+make
+
+add
+
+nano64-microcraft/programs/microcraft.bas
