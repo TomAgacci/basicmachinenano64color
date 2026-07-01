@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Nano64 Minecraft Pulse</title>
+<style>
+  body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; }
+  canvas { image-rendering:pixelated; image-rendering:crisp-edges; background:#000; }
+</style>
+</head>
+<body>
+<canvas id="game" width="128" height="64"></canvas>
+<script>
+// --- Pulse payload: world + engine + "VM" in JS ---
+
+const W = 64, H = 32;
+const world = new Array(W * H).fill(0);
+let px = 32, py = 16;
+
+// init flat world (dirt + grass), like engine2d.initFlatWorld()
+for (let y = 0; y < H; y++) {
+  for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if (y > H / 2) world[i] = 1;      // dirt
+    else if (y === H / 2) world[i] = 3; // grass
+    else world[i] = 0;                // air
+  }
+}
+
+// simple raycast into 2D world (engine3d.raycast equivalent)
+function raycast(px, py, angle, maxDist) {
+  const hits = [];
+  let x = px, y = py;
+  const dx = Math.cos(angle), dy = Math.sin(angle);
+  for (let d = 0; d < maxDist; d++) {
+    x += dx; y += dy;
+    const ix = x | 0, iy = y | 0;
+    if (ix < 0 || iy < 0 || ix >= W || iy >= H) break;
+    const block = world[iy * W + ix];
+    hits.push(block);
+    if (block !== 0) break;
+  }
+  return hits;
+}
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const fb = ctx.createImageData(128, 64);
+
+function setPixel(x, y, on) {
+  if (x < 0 || y < 0 || x >= 128 || y >= 64) return;
+  const idx = (y * 128 + x) * 4;
+  const c = on ? 255 : 0;
+  fb.data[idx] = c;
+  fb.data[idx+1] = c;
+  fb.data[idx+2] = c;
+  fb.data[idx+3] = 255;
+}
+
+function clearFb() {
+  fb.data.fill(0);
+}
+
+// main frame: 2D world + player + pseudo-3D strip
+function frame() {
+  clearFb();
+
+  // 2D world in lower part (shifted down by 16 pixels)
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const block = world[y * W + x];
+      if (block !== 0) {
+        const sx = x * 2;
+        const sy = y * 2 + 16;
+        setPixel(sx,     sy,     true);
+        setPixel(sx + 1, sy,     true);
+        setPixel(sx,     sy + 1, true);
+        setPixel(sx + 1, sy + 1, true);
+      }
+    }
+  }
+
+  // player
+  let sx = px * 2;
+  let sy = py * 2 + 16;
+  setPixel(sx,     sy,     true);
+  setPixel(sx + 1, sy,     true);
+  setPixel(sx,     sy + 1, true);
+  setPixel(sx + 1, sy + 1, true);
+
+  // pseudo-3D strip at top
+  const cols = 64;
+  for (let col = 0; col < cols; col++) {
+    const angle = -0.5 + (col / cols); // -0.5..+0.5
+    const hits = raycast(px, py, angle, 32);
+    let height = 0;
+    if (hits.length && hits[hits.length - 1] !== 0) height = 8;
+    for (let h = 0; h < height; h++) {
+      const vx = col * 2;
+      const vy = 8 - h;
+      setPixel(vx,     vy, true);
+      setPixel(vx + 1, vy, true);
+    }
+  }
+
+  ctx.putImageData(fb, 0, 0);
+  requestAnimationFrame(frame);
+}
+
+// simple keyboard movement
+window.addEventListener('keydown', e => {
+  if (e.key === 'a') px = Math.max(0, px - 1);
+  if (e.key === 'd') px = Math.min(W - 1, px + 1);
+  if (e.key === 'w') py = Math.max(0, py - 1);
+  if (e.key === 's') py = Math.min(H - 1, py + 1);
+});
+
+frame();
+</script>
+</body>
+</html>
