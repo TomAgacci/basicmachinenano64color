@@ -5,8 +5,8 @@ that is a violation of the software.
 
 Please support the software and use this link
 https://amzn.to/4uvatF5
-//Base files
-//github.com/TomAgacci/nano64download
+Base files
+github.com/TomAgacci/nano64download
 
 What this does is create a layer on Nano64 which allows the black and white signal to be interpreted as color so you just set your bas, or prg files to
 black and white and run them without the color render because it adds 16 color anyways.
