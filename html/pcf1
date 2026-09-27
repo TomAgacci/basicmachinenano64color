@@ -1,0 +1,9 @@
+PCF_MAGIC: "PCF1"
+FILE_COUNT: <number>
+
+For each file:
+    NAME_LEN: 1 byte
+    NAME: ASCII
+    COMPRESSED_LEN: 4 bytes
+    UNCOMPRESSED_LEN: 4 bytes
+    DATA: compressed bytes (zlib)
