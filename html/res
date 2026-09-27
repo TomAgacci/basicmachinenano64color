@@ -1,0 +1,44 @@
+void browserRender(const uint8_t *buf, uint16_t len) {
+    uint16_t i = 0;
+    int x = 0, y = 0;
+    uint8_t fg = 1, bg = 0;
+
+    while (i < len) {
+        uint8_t tag = buf[i++];
+
+        switch (tag) {
+        case 0x01: { // TEXT
+            uint8_t tlen = buf[i++];
+            for (uint8_t j = 0; j < tlen; j++) {
+                char c = buf[i++];
+                drawChar(x, y, c, fg, bg);
+                x += CHAR_W;
+                if (x + CHAR_W > SCREEN_W) {
+                    x = 0;
+                    y += LINE_H;
+                }
+            }
+            break;
+        }
+        case 0x02: { // H1
+            fg = 7; bg = 0;
+            x = 0;
+            y += LINE_H;
+            break;
+        }
+        case 0x03: { // LINK
+            fg = 6; bg = 0;
+            // same as TEXT but maybe underline or store link id
+            break;
+        }
+        case 0x10: { // SCRIPT_OP
+            uint8_t op = buf[i++];
+            handleScriptOp(op);
+            break;
+        }
+        default:
+            // ignore unknown
+            break;
+        }
+    }
+}
