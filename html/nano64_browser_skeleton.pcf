@@ -1,0 +1,156 @@
+PCF1
+VERSION 1
+FILECOUNT 4
+
+FILE BEGIN
+NAME d64_skeleton.txt
+UNCOMPRESSED 512
+COMPRESSED 512
+DATA
+============================================================
+NANO64 D64 SKELETON
+============================================================
+DISK HEADER:
+  TITLE: NANO64BROWSER
+  ID: A1
+
+FILES:
+  - browser.bas
+  - scripts.bin
+  - index.pulse
+  - blockblock.pulse
+============================================================
+END FILE
+
+FILE BEGIN
+NAME browser.bas
+UNCOMPRESSED 2048
+COMPRESSED 2048
+DATA
+0 REM NANO64 BROWSER ALPHA - AUTOLOADER
+10 GOSUB 2000
+20 GOSUB 3000
+30 GOTO 10000
+
+100 REM PAGE DISPATCHER
+110 IF PAGE=0 THEN GOSUB 3000
+120 IF PAGE=1 THEN GOSUB 4000
+130 IF PAGE=2 THEN GOSUB 5000
+140 RETURN
+
+200 REM INDEX PAGE
+210 PRINT "NANO64 BROWSER ALPHA"
+220 PRINT "1. BLOCK BLOCK"
+230 PRINT "2. ABOUT"
+240 INPUT A$
+250 IF A$="1" THEN PAGE=1
+260 IF A$="2" THEN PAGE=2
+270 GOSUB 100
+280 RETURN
+
+300 REM LOAD INDEX PAGE
+320 RETURN
+
+400 REM BLOCKBLOCK PAGE
+410 PRINT "BLOCKBLOCK PAGE"
+420 GOSUB 9000
+430 RETURN
+
+500 REM ABOUT PAGE
+510 PRINT "ABOUT THIS BROWSER"
+520 PRINT "JS-LIKE SCRIPTOPS ENABLED"
+530 RETURN
+
+2000 REM INIT
+2010 PAGE=0
+2020 RETURN
+
+9000 REM SCRIPT BLOCK EXECUTION
+9010 FOR I=1 TO SCRIPTCOUNT
+9020 OP = SCRIPT(I,0)
+9030 IF OP=40 THEN GOSUB 9100
+9040 IF OP=41 THEN GOSUB 9200
+9050 IF OP=42 THEN GOSUB 9300
+9060 NEXT I
+9070 RETURN
+
+9100 REM SETCOLOR
+9110 C = SCRIPT(I,1)
+9120 REM APPLY COLOR
+9130 RETURN
+
+9200 REM DRAWRECT
+9210 X = SCRIPT(I,1)
+9220 Y = SCRIPT(I,2)
+9230 W = SCRIPT(I,3)
+9240 H = SCRIPT(I,4)
+9250 REM DRAW RECT
+9260 RETURN
+
+9300 REM DRAWTEXT
+9310 X = SCRIPT(I,1)
+9320 Y = SCRIPT(I,2)
+9330 L = SCRIPT(I,3)
+9340 PRINT MID$(TEXT$,1,L)
+9350 RETURN
+
+10000 REM MAIN LOOP
+10010 GOSUB 100
+10020 GOTO 10000
+END FILE
+
+FILE BEGIN
+NAME scriptops_template.txt
+UNCOMPRESSED 1024
+COMPRESSED 1024
+DATA
+============================================================
+SCRIPTOPS INJECTION TEMPLATE
+============================================================
+SCRIPTCOUNT = <NUMBER>
+
+REM setColor(c)
+SCRIPT(1,0) = 40
+SCRIPT(1,1) = <COLOR>
+
+REM drawRect(x,y,w,h)
+SCRIPT(2,0) = 41
+SCRIPT(2,1) = <X>
+SCRIPT(2,2) = <Y>
+SCRIPT(2,3) = <W>
+SCRIPT(2,4) = <H>
+
+REM drawText(x,y,"TEXT")
+SCRIPT(3,0) = 42
+SCRIPT(3,1) = <X>
+SCRIPT(3,2) = <Y>
+SCRIPT(3,3) = <LEN>
+SCRIPT(3,4) = 0
+TEXT$ = "<TEXT>"
+============================================================
+END FILE
+
+FILE BEGIN
+NAME html_example.html
+UNCOMPRESSED 1024
+COMPRESSED 1024
+DATA
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+  "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>Nano64 Browser Alpha</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body>
+<h1>Block Block</h1>
+<p>Welcome to the Nano64 HTML-like browser alpha.</p>
+
+<script>
+setColor(4);
+drawRect(10,10,80,32);
+drawText(12,20,"BLOCK BLOCK READY");
+</script>
+</body>
+</html>
+END FILE
