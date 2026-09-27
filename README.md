@@ -1,5 +1,7 @@
 Licensed Under Creative Commons No Derivatives Non Commerical Open Source
 
+https://github.com/TomAgacci/nano64download
+
 License discretion, music produced on the Moog Ramanujan synth platform cannot be interrupted mid song with commercials on streaming platforms,
 that is a violation of the software.
 
