@@ -1,0 +1,63 @@
+struct Sprite {
+  int x, y;
+  int w, h;
+  uint8_t color;
+  uint8_t frame;
+  bool active;
+};
+
+Sprite sprites[8];
+
+void nano64_reset_sprites() {
+  for (int i=0;i<8;i++) {
+    sprites[i] = {0,0,8,8,1,0,false};
+  }
+}
+
+void nano64_sprite_cmd(uint8_t idx, int x, int y, uint8_t col) {
+  if (idx >= 8) return;
+  sprites[idx].x = x;
+  sprites[idx].y = y;
+  sprites[idx].color = col;
+  sprites[idx].active = true;
+}
+
+void nano64_spritemove_cmd(uint8_t idx, int dx, int dy) {
+  if (idx >= 8 || !sprites[idx].active) return;
+  sprites[idx].x += dx;
+  sprites[idx].y += dy;
+}
+
+void nano64_spriteframe_cmd(uint8_t idx, uint8_t frame) {
+  if (idx >= 8 || !sprites[idx].active) return;
+  sprites[idx].frame = frame;
+}
+
+bool nano64_sprite_collide(uint8_t a, uint8_t b) {
+  if (!sprites[a].active || !sprites[b].active) return false;
+  Sprite &sa = sprites[a];
+  Sprite &sb = sprites[b];
+  return (sa.x < sb.x + sb.w &&
+          sa.x + sa.w > sb.x &&
+          sa.y < sb.y + sb.h &&
+          sa.y + sa.h > sb.y);
+}
+
+void nano64_check_collisions() {
+  for (uint8_t i=0;i<8;i++) {
+    for (uint8_t j=i+1;j<8;j++) {
+      if (nano64_sprite_collide(i,j)) {
+        // handle collision: set flags, trigger sound, etc.
+      }
+    }
+  }
+}
+
+void nano64_step() {
+  // Called every frame
+  // 1. Execute bytecode (SPRITE, SPRITEMOVE, SPRITEFRAME, SCROLL, etc.)
+  // 2. Update sprites
+  // 3. Check collisions
+  nano64_check_collisions();
+  // 4. Render sprites over your tile grid
+}
